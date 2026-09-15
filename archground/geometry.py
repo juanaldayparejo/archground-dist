@@ -18,6 +18,8 @@
 
 from astropy.time import Time
 from astroquery.jplhorizons import Horizons
+from astropy.table import Table
+import astropy.units as u
 import archground
 import numpy as np
 import matplotlib.pyplot as plt
@@ -139,8 +141,193 @@ def get_ephemerides_epoch(date,time,planet,observatory):
 
     return eph
 
+################################################################################################################
+
+def get_ephemerides_period(date_start,date_end,planet,observatory,delta_minutes=5):
+    """
+    Get ephemerides for a given date, time, planet and observatory.
+
+    Parameters
+    ----------
+    date_start : str
+        Date in the format 'YYYY-MM-DD'.
+    date_end : str
+        Time in the format 'HH:MM:SS'.
+    planet : str
+        Name of the planet (see archground dictionaries).
+    observatory : str
+        Name of the observatory (see archground dictionaries).
+    delta_minutes : int
+        Step in minutes for calculating the ephemerides
+    
+    Returns
+    -------
+    dict
+        Dictionary containing ephemerides information.
+    """
+    
+    # Combine date and time into a single string
+    start_str = f"{date_start} 00:00:00"
+    end_str = f"{date_end} 00:00:00"
+    
+    # Get the Horizons ID for the planet and observatory
+    planet_id = planet_dict[planet.upper()]["horizons_id"]
+    observatory_id = observatory_dict[observatory.upper()]["horizons_id"]
+
+    #Query the JPL Horizons system for ephemerides
+    query = Horizons(
+        id=planet_id,
+        location=observatory_id,
+        epochs={
+            "start": start_str,
+            "stop": end_str,
+            "step": f"{delta_minutes}m",
+        },
+    )
+
+    eph = query.ephemerides(quantities="1,2,3,4,8,10,13,14,15,16,17,19,20,21,23,24,25,44")
+
+
+    #Getting the Sun elevation as it is also an important parameter for observing conditions
+    # Get the Sun's elevation at each existing ephemeris time
+    query = Horizons(
+        id="10",  #Sun
+        location=observatory_id,
+        epochs={
+            "start": start_str,
+            "stop": end_str,
+            "step": f"{delta_minutes}m",
+        },
+    )
+    sun_eph = query.ephemerides(quantities="4")
+
+    # Store Sun elevation so you can reuse it for other filters
+    eph["sun_elevation"] = sun_eph["EL"]
+
+    return eph
+
+################################################################################################################
+
+def calculate_visibility_windows(date_start,date_end,planet,observatory,delta_minutes=5,
+                                 maximum_sun_elevation=-10.,
+                                 minimum_solar_elongation=30.,
+                                 minimum_lunar_elongation=0.,
+                                 minimum_elevation=0.,
+                                 target_location=None,maximum_target_separation=30.):
+    """
+    Calculate the periods at which the a given planet is observable, according to some filtering criteria
+
+    Parameters
+    ----------
+    date_start : str
+        Date in the format 'YYYY-MM-DD'.
+    date_end : str
+        Time in the format 'HH:MM:SS'.
+    planet : str
+        Name of the planet (see archground dictionaries).
+    observatory : str
+        Name of the observatory (see archground dictionaries).
+    
+    delta_minutes : int (default = 5)
+        Step in minutes for calculating the ephemerides
+    
+    maximum_sun_elevation : float (default = -10.)
+        Maximum elevation of the Sun in degrees (<-10. is astronomical night)
+    minimum_solar_elongation : float (default = 30.)
+        Minimum solar elongation in degrees
+    minimum_lunar_elongation : float (default = 90.)
+        Minimum lunar elongation in degrees
+    minimum_elevation : float (default = 30.)
+        Minimum elevation of the target planet above the horizon in degrees
+    target_location : (float,float)
+        If not None, it indicates the (latitude_target,longitude_target) of the target point
+    maximum_target_separation : float (default = 30.)
+        If target_location is not None, then it defines the maximum separation allowed to the target from the sub-observer point
+
+    Returns
+    -------
+    dict
+        Dictionary containing ephemerides information.
+    """
+
+    #Getting the ephemerides
+    ephemerides = archground.geometry.get_ephemerides_period(date_start,date_end,planet,observatory,delta_minutes=delta_minutes)
+
+    #Applying filters
+    mask = ( (ephemerides["EL"] > minimum_elevation) & 
+             (ephemerides["elong"] > minimum_solar_elongation) & 
+             (ephemerides["sun_elevation"] < maximum_sun_elevation) & 
+             (ephemerides["lunar_elong"] > minimum_lunar_elongation)) 
+
+    #Applying filter for target location if required
+    if target_location is not None:
+        target_lat, target_lon = np.deg2rad(target_location)
+
+        lat_subobs = np.deg2rad(ephemerides["PDObsLat"])                                 #Planetodetic sub-observer latitude (degrees) - North positive
+        lon_subobs = np.deg2rad((-ephemerides["PDObsLon"] + 180.0) % 360.0 - 180.0)      #Planetodetic sub-observer longitude (degrees) - East positive
+
+        # Cosine of angular separation from the sub-observer point
+        cos_separation = (
+            np.sin(target_lat) * np.sin(lat_subobs)
+            + np.cos(target_lat) * np.cos(lat_subobs)
+            * np.cos(target_lon - lon_subobs)
+        )
+
+        separation_angle = np.rad2deg(np.arccos(cos_separation))
+
+        # Separation < 90 degrees means cosine > 0
+        mask &= np.ma.filled(separation_angle < maximum_target_separation, False)
+
+    #Calculating the windows where the criteria is complied
+    ###########################################################3
+
+    # Treat missing values as not visible
+    visible = np.asarray(np.ma.filled(mask, False), dtype=bool)
+
+    # Find where each continuous window starts and ends
+    edges = np.diff(np.r_[False, visible, False].astype(int))
+    start_indices = np.flatnonzero(edges == 1)
+    end_indices = np.flatnonzero(edges == -1) - 1
+
+    dates = Time(
+        ephemerides["datetime_jd"],
+        format="jd",
+        scale="utc",
+    ).to_datetime()
+
+    rows = []
+
+    for window_id, (start_idx, end_idx) in enumerate(
+        zip(start_indices, end_indices), start=1
+    ):
+        start = dates[start_idx]
+        end = dates[end_idx]
+        duration = end - start
+        mid = start + duration / 2
+
+        rows.append((
+            window_id,
+            start.isoformat(sep=" "),
+            end.isoformat(sep=" "),
+            mid.isoformat(sep=" "),
+            duration.total_seconds() / 60,
+        ))
+
+    windows = Table(
+        rows=rows,
+        names=["window_id", "start_utc", "end_utc", "mid_utc", "duration"],
+        dtype=[int, "U26", "U26", "U26", float],
+    )
+
+    windows["duration"].unit = u.min
+
+    return windows
+
+################################################################################################################
+
 def planetodetic_to_planetocentric(
     latitude_deg,
+    planet=None,
     equatorial_radius=3396.19,
     polar_radius=3376.20,
 ):
@@ -149,6 +336,11 @@ def planetodetic_to_planetocentric(
     Radii must use the same units. Accepts scalars or arrays.
     """
     lat = np.deg2rad(latitude_deg)
+
+    if planet is not None:
+        polar_radius = planet_dict[planet.upper()]["polar_radius_km"]
+        equatorial_radius = planet_dict[planet.upper()]["equatorial_radius_km"]
+
     ratio_squared = (polar_radius / equatorial_radius)**2
 
     return np.rad2deg(

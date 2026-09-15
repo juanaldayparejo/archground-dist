@@ -254,7 +254,7 @@ def create_stellar_class(waven,ephemerides,t_sun=5772.0):
 def create_telluric_online(waven,ephemerides,
                             delv=0.001,hitran_file=archground.paths.archnemesis_hitran24,tips_file=archground.paths.archnemesis_tips,
                             era5=False,
-                            resolving_power=90000.):
+                            resolving_power=90000.,id_gas_act=[1,2,3,4,5,6,7]):
     """
     FUNCTION NAME : create_telluric_online()
 
@@ -326,12 +326,9 @@ def create_telluric_online(waven,ephemerides,
 
     Telluric.Spectroscopy = ans.Spectroscopy_0(ILBL=1)
 
-    ids = [1,2,3,4,5,6,7]
-    iso = [0,0,0,0,0,0,0]
-
-    Telluric.Spectroscopy.NGAS = len(ids)
-    Telluric.Spectroscopy.ID = ids
-    Telluric.Spectroscopy.ISO = iso
+    Telluric.Spectroscopy.NGAS = len(id_gas_act)
+    Telluric.Spectroscopy.ID = np.array(id_gas_act,dtype='int32')
+    Telluric.Spectroscopy.ISO = np.zeros_like(id_gas_act,dtype="int32")
     Telluric.Spectroscopy.ISPACE = 0
     Telluric.Spectroscopy.IPROC = np.zeros(Telluric.Spectroscopy.NGAS,dtype='int32')
     Telluric.Spectroscopy.LOCATION_LD = [hitran_file] * Telluric.Spectroscopy.NGAS

@@ -354,7 +354,7 @@ def planetodetic_to_planetocentric(
 ##############################################################################################
 
 
-def build_maps_epoch(ephemerides,res_bin=0.1):
+def build_maps_epoch(ephemerides,res_bin=0.1,angmax=None):
     '''
     FUNCTION NAME : build_maps_epoch()
 
@@ -371,6 +371,7 @@ def build_maps_epoch(ephemerides,res_bin=0.1):
     OPTIONAL INPUTS:
     
         res_bin :: Resolution of the map (arcsec/bin)
+        angmax :: Maximum angular distance at which to compute the maps 
             
     OUTPUTS : 
  
@@ -385,16 +386,16 @@ def build_maps_epoch(ephemerides,res_bin=0.1):
     '''
 
     #Getting the relevant parameters from the ephemerides
-    angsize = ephemerides["ang_width"][0]          #Angular size of the planet's disk (arcsec)
-    pa = ephemerides["NPole_ang"][0]               #Position angle of the North pole wrt the astronomical north
-    lat_subobs = ephemerides["PDObsLat"][0]        #Planetodetic sub-observer latitude (degrees)
-    lon_subobs = (-ephemerides["PDObsLon"][0] + 180.0) % 360.0 - 180.0        #Planetodetic sub-observer longitude (degrees) - East positive
-    lat_subsol = ephemerides["PDSunLat"][0]        #Planetodetic sub-solar latitude (degrees)
-    lon_subsol = (-ephemerides["PDSunLon"][0] + 180.0) % 360.0 - 180.0        #Planetodetic sub-solar longitude (degrees) - East positive
-    phase_angle = ephemerides["alpha"][0]
+    angsize = np.atleast_1d(ephemerides["ang_width"])[0]          #Angular size of the planet's disk (arcsec)
+    pa = np.atleast_1d(ephemerides["NPole_ang"])[0]               #Position angle of the North pole wrt the astronomical north
+    lat_subobs = np.atleast_1d(ephemerides["PDObsLat"])[0]        #Planetodetic sub-observer latitude (degrees)
+    lon_subobs = (-np.atleast_1d(ephemerides["PDObsLon"])[0] + 180.0) % 360.0 - 180.0        #Planetodetic sub-observer longitude (degrees) - East positive
+    lat_subsol = np.atleast_1d(ephemerides["PDSunLat"])[0]        #Planetodetic sub-solar latitude (degrees)
+    lon_subsol = (-np.atleast_1d(ephemerides["PDSunLon"])[0] + 180.0) % 360.0 - 180.0        #Planetodetic sub-solar longitude (degrees) - East positive
+    phase_angle = np.atleast_1d(ephemerides["alpha"])[0]
 
     #Changing from planetodetic to planetocentric
-    target = str(ephemerides["targetname"][0]).split("(")[0].strip().upper()   #Name of planet
+    target = str(np.atleast_1d(ephemerides["targetname"])[0]).split("(")[0].strip().upper()   #Name of planet
     equatorial_radius = archground.geometry.planet_dict[target]["equatorial_radius_km"]
     polar_radius = archground.geometry.planet_dict[target]["polar_radius_km"]
     lat_subobs = archground.geometry.planetodetic_to_planetocentric(
@@ -409,7 +410,8 @@ def build_maps_epoch(ephemerides,res_bin=0.1):
     )
 
     #Calculating the maps
-    angmax = np.ceil(angsize*0.75)
+    if angmax is None:
+        angmax = np.ceil(angsize*0.75)
     res = res_bin
     rotan = -pa
     hx,hy,lat,lon = archground.geometry.xy2latlon(angmax,res,angsize,lat_subobs,lon_subobs,rot_angle=rotan)

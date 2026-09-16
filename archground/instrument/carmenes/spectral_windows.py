@@ -23,7 +23,9 @@ process_orders_info = {
     "alday_12co2_nir": {
 
         #Measurement
-        "diffor" : 23,                     #Diffraction order (from 0 to 27)
+        "diffor" : 40,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 23,                    #Diffraction order (from 0 to 27)
         "waven_min" : 6519.6,              #Minimum wavenumber (cm-1)
         "waven_max" : 6540.0,              #Maximum wavenumber (cm-1)
         "normalise" : True,                #Flag to indicate if radiance must be normalised
@@ -33,7 +35,7 @@ process_orders_info = {
         "id_act" : [2],                    #Radtran ID of active gases in the atmosphere
         "iso_act" : [1],                   #Radtran isotope ID of active gases in the atmosphere
         "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
-        "split_H2O_iso": True,             #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_H2O_iso": False,             #Flag indicating whether H2O must be separated into its 4 main isotopes
         "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
 
         #Telluric
@@ -57,7 +59,9 @@ process_orders_info = {
     "alday_13co2_nir": {
 
         #Measurement
-        "diffor" : 22,                     #Diffraction order (from 0 to 27)
+        "diffor" : 41,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 22,                    #Diffraction order (from 0 to 27)
         "waven_min" : 6736.5,              #Minimum wavenumber (cm-1)
         "waven_max" : 6775.5,              #Maximum wavenumber (cm-1)
         "normalise" : True,                #Flag to indicate if radiance must be normalised
@@ -65,9 +69,9 @@ process_orders_info = {
 
         #Atmosphere
         "id_act" : [2,1],                  #Radtran ID of active gases in the atmosphere
-        "iso_act" : [2,1],                 #Radtran isotope ID of active gases in the atmosphere
+        "iso_act" : [2,0],                 #Radtran isotope ID of active gases in the atmosphere
         "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
-        "split_H2O_iso": True,             #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_H2O_iso": False,             #Flag indicating whether H2O must be separated into its 4 main isotopes
         "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
 
         #Telluric
@@ -76,7 +80,7 @@ process_orders_info = {
 
         #Retrieval
         "scaling_factor_id" : [1,2],       #IDs of the atmospheric parameters to be retrieved through scaling factors
-        "scaling_factor_iso" : [1,2],      #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [0,2],      #IDs of the atmospheric parameters to be retrieved through scaling factors
         "scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
         "scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors
 

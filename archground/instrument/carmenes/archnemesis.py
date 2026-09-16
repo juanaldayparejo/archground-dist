@@ -22,6 +22,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys,os
 
+from archground.paths import archnemesis_hitran24, archnemesis_tips
+
 #########################################################################################################
 
 def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
@@ -104,7 +106,7 @@ def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
 
         Measurement.FWHM = -1.0
 
-        nwave = 101
+        nwave = 201
         #Construct the NFIL,VFIL,AFIL arrays in the class
         nfil = np.zeros(Measurement.NCONV[0],dtype='int32') + nwave
         vfil = np.zeros((nwave,Measurement.NCONV[0]))
@@ -119,7 +121,7 @@ def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
             sigma = fwhm_gaussian / np.sqrt(8 * np.log(2))
             gamma = fwhm_lorentzian / 2
 
-            dv = 2.0*fwhm_gaussian
+            dv = 10.0*fwhm_gaussian
             vwave = np.linspace(-dv,dv,nwave)
             vfil[:,iwave] = Measurement.VCONV[iwave,0] + vwave
             afil[:,iwave] = voigt_profile(vwave, sigma, gamma, out=None)
@@ -356,4 +358,134 @@ def create_telluric_online(waven,ephemerides,
 
     return Telluric
 
+##########################################################################################################################
 
+def create_spectroscopy_class_lookup(lbldir,order,channel,planet,gasID,isoID):
+    """
+    FUNCTION NAME : create_spectroscopy_class_lookup()
+
+    DESCRIPTION : Create an instance of the `Spectroscopy_0` class containing the information about
+                   the CARMENES lbl look-up tables to use
+
+    INPUTS : 
+
+        lbldir :: Location where the look-up tables are stored
+        order :: CARMENES diffraction order
+        channel :: CARMENES channel ("VIS" or "NIR")
+        planet :: Name of the planet the look-up tables are designed for
+        gasID :: List of Radtran gas IDs
+        isoID :: List of Radtran isotope IDs
+
+    OPTIONAL INPUTS: None
+
+    OUTPUTS : 
+ 
+        Spectroscopy :: An instance of the `Spectroscopy_0` class containing the spectroscopy parameters
+
+    CALLING SEQUENCE:
+
+        Spectroscopy = create_spectroscopy_class_lookup(lbldir,order,channel,gasID,isoID)
+
+    MODIFICATION HISTORY : Juan Alday (15/09/2026)
+    """
+
+    Spectroscopy = ans.Spectroscopy_0()
+    Spectroscopy.ILBL = 2  #Line-by-line look-up tables
+    Spectroscopy.NGAS = len(gasID)
+
+    outnames = []
+    for igas in range(Spectroscopy.NGAS):
+        #Creating filename
+        gasname = ans.Data.gas_data.id_to_name(gasID[igas],isoID[igas])
+        outnames.append(lbldir+"/CARMENES_"+channel.upper()+"_ORDER"+str(int(order))+"_"+planet.upper()+"_WN_"+gasname+"_HITRAN24.h5")
+
+    Spectroscopy.LOCATION = outnames
+    Spectroscopy.read_header()
+    Spectroscopy.assess()
+
+    return Spectroscopy
+
+#########################################################################################################
+
+def calculate_lbltable(order,channel,gasID,isoID,planet,
+                        extra_waven=5.,delv=0.001,
+                        hitran_file=archnemesis_hitran24,tips_file=archnemesis_tips):
+    """
+    FUNCTION NAME : calculate_lbltable()
+
+    DESCRIPTION : Calculate a line-by-line table for a 
+
+    INPUTS : 
+
+        order :: Diffraction order for which to calculate the lbl-table
+        channel :: Channel that the order corresponds to ("VIS" or "NIR")
+        gasID, isoID :: Radtran gas and isotopes IDs
+        planet :: Name of the planet the lbl-tables will apply to
+
+    OPTIONAL INPUTS:
+    
+        extra_waven :: Extra wavenumbers to include at either side of the spectral range edges (cm-1)
+        delv :: Wavenumber step for the line-by-line opacity calculation in cm-1
+        hitran_file :: Path to the HITRAN file to be used for the line-by-line opacity calculation (default: archground.paths.archnemesis_hitran24, which is a custom HITRAN24 file containing the main gases in the Venus atmosphere)
+        tips_file :: Path to the TIPS file to be used for the partition function calculation (default: archground.paths.archnemesis_tips, which is a custom TIPS file containing the partition function data for the main gases in the Venus atmosphere)
+
+    OUTPUTS : 
+ 
+        Line-by-line table
+
+    CALLING SEQUENCE:
+
+        calculate_lbltable(order,gasID,isoID,planet)
+
+    MODIFICATION HISTORY : Juan Alday (13/03/2025)
+    """
+
+    #Searching the limits of the diffraction order
+    waven_min = archground.carmenes.orders.CARMENES_ORDERS[channel.upper()][order]["wavenumber_min_cm1"]
+    waven_max = archground.carmenes.orders.CARMENES_ORDERS[channel.upper()][order]["wavenumber_max_cm1"]
+
+    #Building wavenumber array
+    waven_minx = np.floor(waven_min - extra_waven)
+    waven_maxx = np.ceil(waven_max + extra_waven)
+    nwave = int((waven_maxx-waven_minx)/delv) + 1
+    waven = np.linspace(waven_minx,waven_maxx,nwave)
+    ispace = 0
+
+    #Creating filename
+    gasname = ans.Data.gas_data.id_to_name(gasID,isoID)
+    outname = "CARMENES_"+channel.upper()+"_ORDER"+str(int(order))+"_"+planet.upper()+"_WN_"+gasname+"_HITRAN24"
+
+    if planet.upper() == "MARS":
+
+        #Self-shielding fractions
+        self_frac = 0.0
+        if gasID == 2: #CO2
+            self_frac = 1.
+
+        #Pressure and temperature grids
+        npress = 40 ; p0 = np.exp(-18.) ; pn = np.exp(-3.)
+        ntemp = 30 ; t0 = 70. ; tn = 280.
+
+        #Lineshape parameters
+        iproc = 0               #Voigt lineshape
+        wn_calc_window = 25.    #Caclculation window (cm-1)
+        wn_approx_window = 250.  #Caclculation window (cm-1)
+
+
+    ans.calc_lbltable(outname,                       #Name of the output .lta file
+                    gasID,isoID,                   #Gas information
+                    npress,p0,pn,                  #Pressure grid
+                    ntemp,t0,tn,                   #Temperature grid
+                    ispace,nwave,waven_minx,delv,  #Wavenumber grid
+                    iproc,                         #Lineshape identifier
+                    wn_calc_window,                #Wavenumber calculation window (cm-1)
+                    wn_approx_window,              #Wavenumber window at which an approximation for the wings is applied (cm-1)
+                    self_frac,                     #Self-broadening fraction
+                    hitran_file,                   #Database
+                    pf_database=tips_file,         #Partition function database (default = TIPS2025)
+                    cont_database=None,            #Pseudo-continuum database (If not None, it will use the same as the line_database)
+                    include_pressure_shift=True,   #Flag to include pressure shift in the waveumbers
+                    n_chunks=1,                    #Number of chunks to split the wavenumber grid into for the calculations (default = 1, i.e. no splitting)
+                    n_cores=1,                     #Number of cores to use in the calculations (if >1, parallel processes are used. maximum value is n_chunks) 
+                    write_hdf5=True,               #If True, write the output in HDF5 format (default = False, i.e. write in binary .lta format)
+    )

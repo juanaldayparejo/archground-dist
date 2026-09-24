@@ -434,6 +434,7 @@ def build_maps_epoch(ephemerides,res_bin=0.1,angmax=None):
 
     return maps
 
+
 ############################################################################################################
 
 def plot_maps(maps,
@@ -562,6 +563,55 @@ def plot_maps(maps,
     plt.tight_layout()
             
 
+###############################################################################################
+
+def get_geometry_epoch(maps, x, y):
+    """
+    Return the geometry at the grid point nearest to (x, y).
+
+    Parameters
+    ----------
+    maps : dict
+        Output of build_maps_epoch().
+    x, y : float
+        Coordinates in arcseconds.
+
+    Returns
+    -------
+    geometry : dict
+        Coordinates of the selected pixel and its geometry parameters.
+        Geometry values outside the body disk retain their map values
+        (typically NaN).
+    """
+    hx = np.asarray(maps["hx"])
+    hy = np.asarray(maps["hy"])
+
+    if hx.shape != hy.shape:
+        raise ValueError("hx and hy must have the same shape.")
+
+    if not (np.isfinite(x) and np.isfinite(y)):
+        raise ValueError("x and y must be finite.")
+
+    if not (
+        np.nanmin(hx) <= x <= np.nanmax(hx)
+        and np.nanmin(hy) <= y <= np.nanmax(hy)
+    ):
+        raise ValueError("The requested point is outside the map bounds.")
+
+    # Find the nearest pixel in the sky-coordinate grid.
+    distance_squared = (hx - x)**2 + (hy - y)**2
+    index = np.unravel_index(
+        np.nanargmin(distance_squared), hx.shape
+    )
+
+    keys = (
+        "hx", "hy", "lat", "lon",
+        "emiss_ang", "sol_ang", "azi_ang", "lst",
+    )
+    return {
+        key: np.asarray(maps[key])[index].item()
+        for key in keys
+    }
 
 ###############################################################################################
 

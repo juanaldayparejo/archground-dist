@@ -89,9 +89,7 @@ def create_measurement(wavenumber,radiance,error,lat,lon,emiss_ang,sol_ang,azi_a
 
     #Building the ILS
     midwave = np.mean(Measurement.VCONV[:,0])
-    print(midwave,resolving_power)
     fwhm = midwave / resolving_power
-    print(fwhm)
     Measurement.ISHAPE = 2 #Gaussian ILS
     Measurement.FWHM = fwhm
     Measurement.build_ils()

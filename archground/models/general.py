@@ -51,43 +51,6 @@ def create_retrieval_class(niter,philimit=0.1,ncores=1):
 
 ###########################################################################################################################
 
-def create_stellar_class(dist_sun):
-    """
-    FUNCTION NAME : create_stellar_class()
-
-    DESCRIPTION : Create an instance of the `Stellar_0` class containing the stellar parameters for the any case
-
-    INPUTS : 
-
-        dist_sun :: Distance of planet from the Sun in AU
-
-    OPTIONAL INPUTS:
-    
-        None
-            
-    OUTPUTS : 
- 
-        Stellar :: An instance of the `Stellar_0` class containing the stellar parameters for the any case
-
-    CALLING SEQUENCE:
-
-        Stellar = create_stellar_class()
-
-    MODIFICATION HISTORY : Juan Alday (13/03/2025)
-    """
-
-    Stellar = ans.Stellar_0()
-
-    #Defining the Sun-planet distance
-    Stellar.DIST = dist_sun
-
-    #Defining the file containing the solar spectrum
-    solfile = 'houghtonsolarwn.dat'
-
-    return Stellar, solfile
-
-###########################################################################################################################
-
 def create_layer_class(Atmosphere,nlay=101):
     """
     FUNCTION NAME : create_layer_class()
@@ -118,11 +81,251 @@ def create_layer_class(Atmosphere,nlay=101):
     Layer.NLAY = nlay        #Number of layers
     Layer.LAYTYP = 1         #Layering performed with equal changes in log pressure
     Layer.LAYINT = 1       
-    Layer.LAYHT = Atmosphere.H[0] #m
+
+    mask = (Atmosphere.T > 0.0)
+    hvalid = Atmosphere.H[mask]
+    layht = hvalid[0]
+    Layer.LAYHT = layht #m
     Layer.assess()
 
     return Layer
 
+###########################################################################################################################
+
+def create_measurement(wavenumber,radiance,error,lat,lon,emiss_ang,sol_ang,azi_ang,
+                        lat_subobs=None,lon_subobs=None,v_doppler=0.0,resolving_power=90000.):
+    """
+    FUNCTION NAME : create_measurement()
+
+    DESCRIPTION : Create a measurement instance with the given parameters
+
+    INPUTS : 
+
+        wavenumber :: Wavenumber grid (cm-1)
+        radiance :: Radiance (erg s-1 cm-2 sr-1 (cm-1)-1)
+        error :: Radiance error (erg s-1 cm-2 sr-1 (cm-1)-1)
+        lat :: Latitude (degrees)
+        lon :: Longitude (degrees)
+        emiss_ang :: Emission angle (degrees)
+        sol_ang :: Solar zenith angle (degrees)
+        azi_ang :: Azimuth angle (degrees)
+
+    OPTIONAL INPUTS:
+    
+        lat_subobs :: Latitude of the sub-observer point (degrees)
+        lon_subobs :: Longitude of the sub-observer point (degrees)
+            
+    OUTPUTS : 
+ 
+        Measurement :: An instance of the `Measurement` class containing the reference measurement from TEXES
+
+    CALLING SEQUENCE:
+
+        Measurement = create_measurement(wavenumber,radiance,error,lat,lon,emiss_ang,sol_ang,azi_ang)
+
+    MODIFICATION HISTORY : Juan Alday (23/08/2026)
+    """
+
+    Measurement = ans.Measurement_0()
+    Measurement.NGEOM = 1
+    Measurement.NCONV = np.zeros(Measurement.NGEOM,dtype='int') + len(wavenumber)
+    Measurement.edit_VCONV(wavenumber[:,None])
+    Measurement.edit_MEAS(radiance[:,None] * 1.0e-7) #Converting from erg s-1 cm-2 sr-1 (cm-1)-1 to W cm-2 sr-1 (cm-1)-1
+    Measurement.edit_ERRMEAS(error[:,None] * 1.0e-7) #Converting from erg s-1 cm-2 sr-1 (cm-1)-1 to W cm-2 sr-1 (cm-1)-1
+
+    Measurement.NAV = np.ones(Measurement.NGEOM,dtype='int')
+    Measurement.edit_FLAT(np.ones((Measurement.NGEOM,Measurement.NAV.max())) * lat )
+    Measurement.edit_FLON(np.ones((Measurement.NGEOM,Measurement.NAV.max())) * lon )
+    Measurement.edit_EMISS_ANG(np.ones((Measurement.NGEOM,Measurement.NAV.max())) * emiss_ang )
+    Measurement.edit_SOL_ANG(np.ones((Measurement.NGEOM,Measurement.NAV.max())) * sol_ang )
+    Measurement.edit_AZI_ANG(np.ones((Measurement.NGEOM,Measurement.NAV.max())) * azi_ang )
+    Measurement.edit_WGEOM(np.ones((Measurement.NGEOM,Measurement.NAV.max())) )
+
+    Measurement.V_DOPPLER = v_doppler
+
+    if lat_subobs is not None:
+        Measurement.SUBOBS_LAT = lat_subobs
+    else:
+        Measurement.SUBOBS_LAT = lat
+
+    if lon_subobs is not None:
+        Measurement.SUBOBS_LON = lon_subobs
+    else:
+        Measurement.SUBOBS_LON = lon
+
+    #Building the ILS
+    midwave = np.mean(Measurement.VCONV[:,0])
+    fwhm = midwave / resolving_power
+    Measurement.ISHAPE = 2 #Gaussian ILS
+    Measurement.FWHM = fwhm
+    Measurement.build_ils()
+
+    Measurement.assess()
+
+    return Measurement
+
+#########################################################################################################
+
+def create_telluric_online(observatory,waven,date_obs,time_obs,elevation,
+                            delv=0.001,hitran_file=archground.paths.archnemesis_hitran24,tips_file=archground.paths.archnemesis_tips,
+                            era5=True,
+                            resolving_power=90000.,id_gas_act=[1,2,3,4,5,6,7]):
+    """
+    FUNCTION NAME : create_telluric_online()
+
+    DESCRIPTION : Create an instance of the `Telluric_0` class containing the telluric atmosphere
+                   and the spectroscopy calculated from the HITRAN24 and TIPS files
+
+    INPUTS : 
+
+        observatory :: Name of the observatory (see dictionary in geometry.py)
+        waven :: Wavenumber array of the measurement (cm-1)
+        date_obs :: Observation date
+        time_obs :: Observation time (UTC)
+        elevation :: Elevation of the target above the local horizon (degrees)
+
+    OPTIONAL INPUTS:
+    
+        delv :: Wavenumber step for the line-by-line opacity calculation in cm-1
+        hitran_file :: Path to the HITRAN file to be used for the line-by-line opacity calculation (default: archground.paths.archnemesis_hitran24, which is a custom HITRAN24 file containing the main gases in the Venus atmosphere)
+        tips_file :: Path to the TIPS file to be used for the partition function calculation (default: archground.paths.archnemesis_tips, which is a custom TIPS file containing the partition function data for the main gases in the Venus atmosphere)
+        resolving_power :: Spectral resolving power of the measurement (default: 90000)
+        era5 :: If True, then the profiles are downloaded from the ERA-5 reanalysis dataset
+
+    OUTPUTS : 
+ 
+        Telluric :: An instance of the `Telluric_0` class containing the telluric parameters for the Venus case
+
+    CALLING SEQUENCE:
+
+        Telluric = create_telluric_era5_online()
+
+    MODIFICATION HISTORY : Juan Alday (13/03/2025)
+    """
+
+    from datetime import datetime
+
+    #Extracting the observatory parameters
+    lon_obs = archground.geometry.observatory_dict[observatory]["lon"]
+    lat_obs = archground.geometry.observatory_dict[observatory]["lat"]
+    alt_obs = archground.geometry.observatory_dict[observatory]["elevation"]
+
+    #Defining the Telluric class
+    Telluric = ans.Telluric_0()
+
+    #Atmosphere
+    ##################################################################################
+
+    #Defining the inputs
+    Telluric.DATE=date_obs               #UTC date of the observation
+    Telluric.TIME=time_obs               #UTC time of the observation
+    Telluric.LATITUDE=lat_obs            #Latitude of the observatory
+    Telluric.LONGITUDE=lon_obs           #Longitude of the observatory
+    Telluric.ALTITUDE=alt_obs * 1000.    #Altitude of the observatory
+    Telluric.EMISS_ANG=180. - (90. - elevation)    #Observing angle, looking at the zenith is 180 degrees, and at the horizon is 90 degrees
+
+    if era5 is True:
+        #Extracting the atmosphere from the ERA5 model
+        Telluric.extract_atmosphere_era5()
+    else:
+        Telluric.extract_atmosphere_circ()
+
+    Telluric.Atmosphere.NDUST = 0
+
+    #Spectroscopy
+    ##################################################################################
+
+    Telluric.Spectroscopy = ans.Spectroscopy_0(ILBL=1)
+
+    Telluric.Spectroscopy.NGAS = len(id_gas_act)
+    Telluric.Spectroscopy.ID = np.array(id_gas_act,dtype='int32')
+    Telluric.Spectroscopy.ISO = np.zeros_like(id_gas_act,dtype="int32")
+    Telluric.Spectroscopy.ISPACE = 0
+    Telluric.Spectroscopy.IPROC = np.zeros(Telluric.Spectroscopy.NGAS,dtype='int32')
+    Telluric.Spectroscopy.LOCATION_LD = [hitran_file] * Telluric.Spectroscopy.NGAS
+    Telluric.Spectroscopy.LOCATION_PF = [tips_file] * Telluric.Spectroscopy.NGAS
+    Telluric.Spectroscopy.LOCATION_CD = [hitran_file] * Telluric.Spectroscopy.NGAS
+    Telluric.Spectroscopy.LINE_DATA_PARAMS = [ans.MolLineDataParams()] * Telluric.Spectroscopy.NGAS
+
+    #Calculating the spectral grid
+    waven_min = waven.min() ; waven_max = waven.max()
+    fwhm = np.mean([waven_min,waven_max]) / resolving_power
+    waven_minx = waven_min - 5. * fwhm
+    waven_maxx = waven_max + 5. * fwhm
+
+    c = 299792458.0   #Speed of light (m/s)
+    v_doppler_max = 50.
+    waven_minx /= (1.0+v_doppler_max*1.0e3 / c)
+    waven_maxx /= (1.0-v_doppler_max*1.0e3 / c)
+
+    wavemin = np.floor(waven_minx/delv)*delv
+    wavemax = np.ceil(waven_maxx/delv)*delv
+    nwave = int(np.round((wavemax - wavemin) / delv))
+    wave = np.linspace( wavemin , wavemax , nwave )
+    Telluric.Spectroscopy.NWAVE = nwave
+    Telluric.Spectroscopy.WAVE = wave
+
+    return Telluric
+
+#########################################################################################################
+
+def create_stellar_class(waven,dist_sun,v_sun_planet,t_sun=5772.0):
+    """
+    Create the stellar class for archNEMESIS
+
+    Here, we are going to use a Planck function at 5772 K for the continuum, multiplied by the 
+    Toon pseudo-linelist for the solar lines
+
+    Parameters
+    ----------
+
+    waven : ndarray (nwave)
+        Wavenumber array (cm-1)
+    t_sun : float (default = 5772 K)
+        Effective temperature of the Sun (K)
+
+    Returns
+    -------
+    
+    Stellar class
+    """
+
+    #Reading Toon's linelist
+    toon_file = os.path.join(archground.paths.archground_path,'../','data','solar','solar_merged_20240731_600_33300_100.out')
+    data = np.loadtxt(toon_file, skiprows=3)
+    waven_solar = data[:,0] 
+    trans_solar = data[:,1]
+
+    if( ( (waven.min()-5.) < waven_solar.min()) or ( (waven.max()+5.) > waven_solar.max() ) ):
+        print("warning :: Toon's solar linelist outside of range. Modelling solar spectrum as blackbody without lines")
+
+        waven_solarx = np.arange(waven.min() - 5. , waven.max() + 5., 0.1)
+        trans_solarx = np.ones_like(waven_solarx)
+
+    else:
+        #Getting only relevant part of the spectrum
+        waven_solarx = waven_solar[ (waven_solar>=waven.min() - 5.) & (waven_solar<=waven.max() + 5.) ]
+        trans_solarx = trans_solar[ (waven_solar>=waven.min() - 5.) & (waven_solar<=waven.max() + 5.) ]
+        del waven_solar, trans_solar
+
+    #Calculating Luminosity from a blackbody
+    Stellar = ans.Stellar_0()
+    Stellar.ISPACE = 0
+    Stellar.NWAVE = len(waven_solarx)
+    Stellar.WAVE = waven_solarx
+    Stellar.RADIUS = 6.957e8 / 1.0e3  # km
+    Stellar.DIST = dist_sun
+    Stellar.calc_luminosity_blackbody(t_sun)
+
+    Stellar.SOLSPEC *= trans_solarx
+
+    #Applying Doppler shift between star and planet
+    c_kms = 299792.458
+    doppler_factor = 1.0 + v_sun_planet / c_kms
+    Stellar.WAVE /= doppler_factor
+    Stellar.assess()
+
+    return Stellar
 
 ###########################################################################################################################
 

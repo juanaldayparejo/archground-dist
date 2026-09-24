@@ -137,3 +137,107 @@ def create_surface_vcd(lat,lon,LST):
     Surface.assess()
 
     return Surface
+
+###########################################################################################################################
+
+def create_scatter_class(waven,iscat=0,nmu=5,nf=10,nphi=100):
+    """
+    FUNCTION NAME : create_cloud_model()
+
+    DESCRIPTION : Create an instance of the `Scatter_0` class containing the cloud model for the Venus case
+
+    INPUTS : 
+
+        waven :: Wavenumber array of the measurement in cm-1
+
+    OPTIONAL INPUTS:
+    
+        iscat :: Flag indicating the type of scattering calculations
+                    iscat = 0 : No scattering
+                    iscat = 1 : Multiple scattering
+            
+    OUTPUTS : 
+ 
+        Scatter :: An instance of the `Scatter_0` class containing the cloud model for the Venus case
+
+    CALLING SEQUENCE:
+
+        Scatter = create_cloud_model(Atmosphere)
+
+    MODIFICATION HISTORY : Juan Alday (13/03/2025)
+    """
+
+    waven_min = waven.min() ; waven_max = waven.max()
+
+    #Defining cloud modes
+    #Mode 1
+    r_g1 = 0.3
+    sigma_g1 = 0.445
+
+    #Mode 2
+    r_g2 = 1.0
+    sigma_g2 = 0.255
+
+    #Mode 2'
+    r_g2p = 1.40
+    sigma_g2p = 0.207
+
+    #Mode 3
+    r_g3 = 3.65
+    sigma_g3 = 0.245
+
+    #First of all we need to define our wavelength or wavenumber array
+    #and tell the class in what units we want these calculations (wavenumber in cm-1 (ISPACE=0) or wavelength in um (ISPACE=1))
+    Scatter = ans.Scatter_0()
+    Scatter.read_refind(4)  #Reading optical properties of the main condensates in the Venus atmosphere (sulfuric acid aerosols)
+    Scatter.ISCAT = iscat
+    Scatter.NF = nf
+    Scatter.NMU = nmu
+    Scatter.NPHI = nphi
+    Scatter.ISPACE = 0 #Wavelength
+
+    Scatter.IMIE = 2 #Legendre polynomial expansion of the phase function
+    waven = np.arange(int(waven_min)-5.,waven_max+6.,1.)
+    NDUST = 4      #Number of aerosol populations that we want to include in our atmosphere
+    NWAVE = len(waven)    #Number of spectral points
+    NTHETA = 361    #Number of phase angles for defining the phase function
+    theta = np.linspace(0.,180.,NTHETA)
+
+    #Now we initialise the arrays that will be filled with the calculations
+    Scatter.initialise_arrays(NDUST,NWAVE,NTHETA,NLPOL=150)
+    Scatter.WAVE = waven
+    Scatter.THETA = theta
+
+    #Mode 1
+    print('Calculating Mode 1')
+    iscat = 2  #Log-normal distribution
+    pars = np.array([r_g1,sigma_g1])
+
+    idust = 0    #The index of the aerosol populations in the class that this calculation corresponds to (from 0 to NDUST-1)
+    Scatter.makephase(idust,iscat,pars)
+
+    #Mode 2
+    print('Calculating Mode 2')
+    iscat = 2  #Log-normal distribution
+    pars = np.array([r_g2,sigma_g2])
+
+    idust = 1    #The index of the aerosol populations in the class that this calculation corresponds to (from 0 to NDUST-1)
+    Scatter.makephase(idust,iscat,pars)
+
+    #Mode 2'
+    print('Calculating Mode 2p')
+    iscat = 2  #Log-normal distribution
+    pars = np.array([r_g2p,sigma_g2p])
+
+    idust = 2    #The index of the aerosol populations in the class that this calculation corresponds to (from 0 to NDUST-1)
+    Scatter.makephase(idust,iscat,pars)
+
+    #Mode 3
+    print('Calculating Mode 3')
+    iscat = 2  #Log-normal distribution
+    pars = np.array([r_g3,sigma_g3])
+
+    idust = 3    #The index of the aerosol populations in the class that this calculation corresponds to (from 0 to NDUST-1)
+    Scatter.makephase(idust,iscat,pars)
+
+    return Scatter

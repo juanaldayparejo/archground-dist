@@ -17,7 +17,7 @@
 process_orders_info = {
 
     ###########################################################################################
-    # POSITION 6 - DERIVATION OF 18O/16O in CO2 
+    #  
     ###########################################################################################
     
     "alday_12co2_nir": {
@@ -28,7 +28,7 @@ process_orders_info = {
         "idiffor" : 23,                    #Diffraction order (from 0 to 27)
         "waven_min" : 6519.6,              #Minimum wavenumber (cm-1)
         "waven_max" : 6540.0,              #Maximum wavenumber (cm-1)
-        "normalise" : True,                #Flag to indicate if radiance must be normalised
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
         "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
 
         #Atmosphere
@@ -53,7 +53,7 @@ process_orders_info = {
         "tel_scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
         "tel_scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors 
 
-        "flag_baseline" : True,            #Flag indicating whether a baseline must be retrieved
+        "flag_baseline" : True,                #Flag indicating whether a baseline must be retrieved
     },
 
     "alday_13co2_nir": {
@@ -91,5 +91,78 @@ process_orders_info = {
 
         "flag_baseline" : True,            #Flag indicating whether a baseline must be retrieved
     },
+
+    "alday_18oco_nir": {
+
+        #Measurement
+        "diffor" : 37,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 26,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 6090.0,              #Minimum wavenumber (cm-1)
+        "waven_max" : 6115.0,              #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [2,2,2],                #Radtran ID of active gases in the atmosphere
+        "iso_act" : [1,2,3],               #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [1,2,6],            #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0,0,0],           #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [2,2,2],         #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [1,2,3],        #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0,1.0,1.0],  #A priori scaling factors
+        "scaling_factor_err" : [0.5,0.5,0.5],  #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [1,2,6],         #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0,0,0],        #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5,0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,                    #Flag indicating whether a baseline must be retrieved
+    },
+
+    "alday_o2_vis": {
+
+        #Measurement
+        "diffor" : 80,                     #Diffraction order (from dictionary)
+        "channel" : "VIS",                 #Channel
+        "idiffor" : 38,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 13065.0,             #Minimum wavenumber (cm-1)
+        "waven_max" : 13117.0,             #Maximum wavenumber (cm-1)
+        "normalise" : True,                #Flag to indicate if radiance must be normalised
+        "vnorm" : 13065.5,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [7],                    #Radtran ID of active gases in the atmosphere
+        "iso_act" : [0],                   #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": False,            #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [7],                #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0],               #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [7],         #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [0],        #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0],      #A priori scaling factors
+        "scaling_factor_err" : [0.5],      #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [7],     #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0],    #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,            #Flag indicating whether a baseline must be retrieved
+    },
+
 
 }

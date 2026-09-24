@@ -26,9 +26,8 @@ from archground.paths import archnemesis_hitran24, archnemesis_tips
 
 #########################################################################################################
 
-def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
+def create_measurement_class(channel,waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
                              model_fov=False,
-                             nir_channel=True,
                              normalise_spectrum=False,vnorm=None,norm_kernel_size=10):
     """
     Create the measurement class for archNEMESIS 
@@ -102,8 +101,9 @@ def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
     Measurement.edit_ERRMEAS(errmeas[:,None])
 
     #Spectral resolution
-    if nir_channel is True:
+    if channel == "NIR":
 
+        #Lineshape parameters taken from Nagel et al. (2023)
         Measurement.FWHM = -1.0
 
         nwave = 201
@@ -130,8 +130,33 @@ def create_measurement_class(waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
         Measurement.VFIL = vfil
         Measurement.AFIL = afil
 
-    else:
-        raise ValueError("error :: the lineshape for the VIS channel has not been implemented yet")
+    elif (channel == "VIS"):
+
+        Measurement.FWHM = -1.0
+
+        nwave = 201
+        #Construct the NFIL,VFIL,AFIL arrays in the class
+        nfil = np.zeros(Measurement.NCONV[0],dtype='int32') + nwave
+        vfil = np.zeros((nwave,Measurement.NCONV[0]))
+        afil = np.zeros((nwave,Measurement.NCONV[0]))
+        for iwave in range(Measurement.NCONV[0]):
+
+            #Parameters listed in Nagel et al. (2023), Section 3.5, Figure 3 and Table 2
+            fwhm_gaussian = 1.01e-5 * Measurement.VCONV[iwave,0]
+            fwhm_lorentzian = 0.21e-5 * Measurement.VCONV[iwave,0]
+
+            # Parameters for scipy.special.voigt_profile:
+            sigma = fwhm_gaussian / np.sqrt(8 * np.log(2))
+            gamma = fwhm_lorentzian / 2
+
+            dv = 10.0*fwhm_gaussian
+            vwave = np.linspace(-dv,dv,nwave)
+            vfil[:,iwave] = Measurement.VCONV[iwave,0] + vwave
+            afil[:,iwave] = voigt_profile(vwave, sigma, gamma, out=None)
+
+        Measurement.NFIL = nfil
+        Measurement.VFIL = vfil
+        Measurement.AFIL = afil
 
     #Finding points within the fibre
     r_fibre = 1.5 / 2.
@@ -312,8 +337,8 @@ def create_telluric_online(waven,ephemerides,
     Telluric.TIME=time_obs               #UTC time of the observation
     Telluric.LATITUDE=lat_obs            #Latitude of the observatory
     Telluric.LONGITUDE=lon_obs           #Longitude of the observatory
-    Telluric.ALTITUDE=alt_obs            #Altitude of the observatory
-    Telluric.EMISS_ANG=180.-elevation    #Observing angle, looking straight up to the zenith in this case
+    Telluric.ALTITUDE=alt_obs * 1000.    #Altitude of the observatory (metres)
+    Telluric.EMISS_ANG=180. - (90. - elevation)    #Observing angle, looking at the zenith is 180 degrees, and at the horizon is 90 degrees
 
     if era5 is True:
         #Extracting the atmosphere from the ERA5 model

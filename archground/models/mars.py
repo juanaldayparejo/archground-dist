@@ -59,14 +59,23 @@ def create_atmosphere_mcd(h,lat,lon,Ls,LST,include_dust=True):
 
     #Extracting p-T profile
     gasID = np.array([1,2,3,5,7,22,39,45,48,76]) #RADTRAN ID for each gas
-    press,temp,rho,vmr = archground.gcm.extract_mcd.get_profile(h,gasID,lat,lon,Ls,LST,scenario=1,zkey=2,hrkey=1)
+    press,temp,rho,vmr = archground.gcm.extract_mcd.get_profile(h,gasID,lat,lon,Ls,LST,scenario=1,zkey=3,hrkey=1)  #zkey=3 indicates altitudes above martian surface
+
+    #Using only valid values
+    mask = (temp > 0.0)
+    h = h[mask]
+    press = press[mask]
+    temp = temp[mask]
+    rho = rho[mask]
+    vmr = vmr[mask,:]
+
 
     #Building Atmosphere
     Atmosphere = ans.Atmosphere_0()
     Atmosphere.NLOCATIONS = 1
     Atmosphere.LATITUDE = lat
     Atmosphere.LONGITUDE = lon
-    Atmosphere.IPLANET = 2
+    Atmosphere.IPLANET = 4  #Mars
     Atmosphere.NP = len(h)
     Atmosphere.edit_H(h*1.0e3)
     Atmosphere.edit_P(press)
@@ -401,7 +410,7 @@ def create_apr_file(runname,
         retrieve_press=False,htan=40.,ptan=None,ptanerr=0.1,
         retrieve_scaling_factor=False,scale_varID1=None,scale_varID2=None,scale_apr=None,scale_err=None,
         retrieve_scaling_factor_telluric=False,tel_varID1=None,tel_varID2=None,tel_apr=None,tel_err=None,
-        retrieve_baseline=False,baseline_degree=2,
+        retrieve_baseline=False,baseline_degree=2,estimate_baseline_coefficient=False,
         ):
 
     """
@@ -440,6 +449,7 @@ def create_apr_file(runname,
             tel_err(ngas) :: Fractional error in the gas vmrs or dust densities (required if retrieve_scaling_factor_telluric=True)
         retrieve_baseline :: Flag to retrieve the baseline at each tangent height with a polynomial function
             baseline_degree :: Degree of the polynomial that must be used to fit the baseline (required if retrieve_baseline=True)
+            estimate_baseline_coefficient :: If True, it estimates the required baseline coefficient to match the reflected solar flux (very rough approximation)
 
     OUTPUTS : 
  
@@ -460,6 +470,9 @@ def create_apr_file(runname,
 
     if retrieve_scaling_factor is True:
         nvar += len(scale_varID1)
+
+    if retrieve_scaling_factor_telluric is True:
+        nvar += len(tel_varID1)
 
     #Counting other variables
     nvar += int(retrieve_temp) + int(retrieve_press) + int(retrieve_baseline)
@@ -543,6 +556,29 @@ def create_apr_file(runname,
         tau = np.zeros(ngeom)
         for it in range(ngeom):
             tau[it] = np.mean(Measurement.MEAS[0:Measurement.NCONV[it],it])
+
+        if estimate_baseline_coefficient:
+
+            if Atmosphere.IPLANET == 4:
+                dist_sun = 1.5 #AU
+                albedo = 0.5
+            else:
+                raise ValueError("error :: need to introduce mean planet distance")
+
+            #Calculating Luminosity from a blackbody
+            Stellar = ans.Stellar_0()
+            Stellar.ISPACE = 0
+            Stellar.NWAVE = len(Measurement.VCONV[:,0])
+            Stellar.WAVE = Measurement.VCONV[:,0]
+            Stellar.RADIUS = 6.957e8 / 1.0e3  # km
+            Stellar.DIST = dist_sun
+            Stellar.calc_luminosity_blackbody(5772.0)
+            Stellar.calc_solar_flux()  #W cm-2 (cm-1)-1
+
+            reflected_radiance = albedo / np.pi * np.mean(Stellar.SOLFLUX)
+
+            tau = tau / reflected_radiance
+
 
         #Defining number of windows, measurements and polynomial degree
         ftau = open('transapr.dat','w')

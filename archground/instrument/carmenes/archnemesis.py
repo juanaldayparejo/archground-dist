@@ -74,6 +74,16 @@ def create_measurement_class(channel,waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
     #Building measurement class
     Measurement = ans.Measurement_0()
     Measurement.NGEOM = 1
+
+    #Check if there are any nan values
+    if np.any(np.isnan(meas)) or np.any(np.isnan(errmeas)):
+        print("warning :: there are NaN values in the measured spectrum or its uncertainty")
+        print("removing NaN values from the arrays")
+        is_valid = np.isfinite(meas) & np.isfinite(errmeas)
+        waven = waven[is_valid]
+        meas = meas[is_valid]
+        errmeas = errmeas[is_valid]
+
     Measurement.NCONV = np.zeros(Measurement.NGEOM,dtype="int32") + len(waven)
 
     if normalise_spectrum is True:
@@ -95,6 +105,8 @@ def create_measurement_class(channel,waven,meas,errmeas,ephemerides,x0=0.,y0=0.,
         errmeas /= anorm
         Measurement.IFORM = 5       
         Measurement.VNORM = vnorm 
+
+
 
     Measurement.edit_VCONV(waven[:,None])
     Measurement.edit_MEAS(meas[:,None])

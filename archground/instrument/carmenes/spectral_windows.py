@@ -56,6 +56,44 @@ process_orders_info = {
         "flag_baseline" : True,                #Flag indicating whether a baseline must be retrieved
     },
 
+
+    "alday_12co2_strong_nir": {
+
+        #Measurement
+        "diffor" : 38,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 25,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 6227.,              #Minimum wavenumber (cm-1)
+        "waven_max" : 6270.,              #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [2,2,2],                #Radtran ID of active gases in the atmosphere
+        "iso_act" : [1,2,3],               #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [1,2],              #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0,0],             #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [0,2],       #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [0,1],      #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
+        "scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [1,2],       #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0,0],      #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,                #Flag indicating whether a baseline must be retrieved
+    },
+
+
     "alday_13co2_nir": {
 
         #Measurement
@@ -64,7 +102,7 @@ process_orders_info = {
         "idiffor" : 22,                    #Diffraction order (from 0 to 27)
         "waven_min" : 6736.5,              #Minimum wavenumber (cm-1)
         "waven_max" : 6775.5,              #Maximum wavenumber (cm-1)
-        "normalise" : True,                #Flag to indicate if radiance must be normalised
+        "normalise" : False,                #Flag to indicate if radiance must be normalised
         "vnorm" : 6739.75,                 #Wavenumber at which to normalise the spectra
 
         #Atmosphere
@@ -128,6 +166,114 @@ process_orders_info = {
         "flag_baseline" : True,                    #Flag indicating whether a baseline must be retrieved
     },
 
+    "alday_h2o_nir": {
+
+        #Measurement
+        "diffor" : 41,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 22,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 6660.0,              #Minimum wavenumber (cm-1)
+        "waven_max" : 6680.0,              #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [2,1],                #Radtran ID of active gases in the atmosphere
+        "iso_act" : [1,0],               #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [1,2],            #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0,0],           #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [2,1],         #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [1,0],        #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0,1.0],        #A priori scaling factors
+        "scaling_factor_err" : [0.5,0.5],        #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [1,2],         #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0,0],        #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,                    #Flag indicating whether a baseline must be retrieved
+    },
+
+    "alday_co_nir": {
+
+        #Measurement
+        "diffor" : 39,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 24,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 6380.9,              #Minimum wavenumber (cm-1)
+        "waven_max" : 6399.0,              #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [2,2,5],                #Radtran ID of active gases in the atmosphere
+        "iso_act" : [1,2,0],               #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [1,2],              #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0,0],             #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [2,2,5],       #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [1,2,0],      #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0,1.0,1.0],  #A priori scaling factors
+        "scaling_factor_err" : [0.5,0.5,0.5],  #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [1,2],       #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0,0],      #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,                #Flag indicating whether a baseline must be retrieved
+    },
+
+    "alday_o3_nir": {
+
+        #Measurement
+        "diffor" : 48,                     #Diffraction order (from dictionary)
+        "channel" : "NIR",                 #Channel
+        "idiffor" : 15,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 7854.,              #Minimum wavenumber (cm-1)
+        "waven_max" : 7930.,              #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 6521.75,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [2,7],                #Radtran ID of active gases in the atmosphere
+        "iso_act" : [1,0],               #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": True,             #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [7],              #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [0],             #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [2,7],       #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [1,0],      #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0,1.0],  #A priori scaling factors
+        "scaling_factor_err" : [0.5,0.5],  #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [7],     #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [0],    #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5],  #A priori uncertainty in scaling factors
+
+        "flag_baseline" : True,                #Flag indicating whether a baseline must be retrieved
+    },
+
     "alday_o2_vis": {
 
         #Measurement
@@ -136,7 +282,7 @@ process_orders_info = {
         "idiffor" : 38,                    #Diffraction order (from 0 to 27)
         "waven_min" : 13065.0,             #Minimum wavenumber (cm-1)
         "waven_max" : 13117.0,             #Maximum wavenumber (cm-1)
-        "normalise" : True,                #Flag to indicate if radiance must be normalised
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
         "vnorm" : 13065.5,                 #Wavenumber at which to normalise the spectra
 
         #Atmosphere
@@ -147,8 +293,8 @@ process_orders_info = {
         "split_CO2_iso": False,            #Flag indicating whether CO2 must be separated into its 4 main isotopes
 
         #Telluric
-        "id_act_tel" : [7],                #Radtran ID of active gases in the telluric atmosphere
-        "iso_act_tel" : [0],               #Radtran isotope ID of active gases in the telluric atmosphere
+        "id_act_tel" : [7,7,7],            #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [1,2,3],           #Radtran isotope ID of active gases in the telluric atmosphere
 
         #Retrieval
         "scaling_factor_id" : [7],         #IDs of the atmospheric parameters to be retrieved through scaling factors
@@ -156,13 +302,48 @@ process_orders_info = {
         "scaling_factor_apr" : [1.0],      #A priori scaling factors
         "scaling_factor_err" : [0.5],      #A priori uncertainty in scaling factors
 
-        "tel_scaling_factor_id" : [7],     #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
-        "tel_scaling_factor_iso" : [0],    #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
-        "tel_scaling_factor_apr" : [1.0],  #A priori scaling factors
-        "tel_scaling_factor_err" : [0.5],  #A priori uncertainty in scaling factors 
+        "tel_scaling_factor_id" : [7,7,7],         #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [1,2,3],        #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5,0.5],  #A priori uncertainty in scaling factors 
 
         "flag_baseline" : True,            #Flag indicating whether a baseline must be retrieved
     },
 
+    "alday_o2_weak_vis": {
+
+        #Measurement
+        "diffor" : 80,                     #Diffraction order (from dictionary)
+        "channel" : "VIS",                 #Channel
+        "idiffor" : 38,                    #Diffraction order (from 0 to 27)
+        "waven_min" : 13025.0,             #Minimum wavenumber (cm-1)
+        "waven_max" : 13073.0,             #Maximum wavenumber (cm-1)
+        "normalise" : False,               #Flag to indicate if radiance must be normalised
+        "vnorm" : 13065.5,                 #Wavenumber at which to normalise the spectra
+
+        #Atmosphere
+        "id_act" : [7],                    #Radtran ID of active gases in the atmosphere
+        "iso_act" : [0],                   #Radtran isotope ID of active gases in the atmosphere
+        "split_CO_iso": False,             #Flag indicating whether CO must be separated into its 4 main isotopes
+        "split_H2O_iso": False,            #Flag indicating whether H2O must be separated into its 4 main isotopes
+        "split_CO2_iso": False,            #Flag indicating whether CO2 must be separated into its 4 main isotopes
+
+        #Telluric
+        "id_act_tel" : [7,7,7],            #Radtran ID of active gases in the telluric atmosphere
+        "iso_act_tel" : [1,2,3],           #Radtran isotope ID of active gases in the telluric atmosphere
+
+        #Retrieval
+        "scaling_factor_id" : [7],         #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_iso" : [0],        #IDs of the atmospheric parameters to be retrieved through scaling factors
+        "scaling_factor_apr" : [1.0],      #A priori scaling factors
+        "scaling_factor_err" : [0.5],      #A priori uncertainty in scaling factors
+
+        "tel_scaling_factor_id" : [7,7,7],         #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_iso" : [1,2,3],        #IDs of the telluric atmospheric parameters to be retrieved through scaling factors
+        "tel_scaling_factor_apr" : [1.0,1.0,1.0],  #A priori scaling factors
+        "tel_scaling_factor_err" : [0.5,0.5,0.5],  #A priori uncertainty in scaling factors 
+
+        "flag_baseline" : True,            #Flag indicating whether a baseline must be retrieved
+    },
 
 }

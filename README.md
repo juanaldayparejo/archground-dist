@@ -10,6 +10,13 @@ If interested users are missing key points in the documentation, would appreciat
 
 To install this package, please follow the next steps:
 
+### 0. Install archNEMESIS
+
+This python package is essentially an adaptation of the archNEMESIS python package prepared for the analysis of ground-based telescope observations of planetary atmospheres.
+
+As such, it is expected that users will already have a working version of archNEMESIS in their virtual environments. If not, please visit the archNEMESIS [website](https://archnemesis.readthedocs.io/en/latest/).
+
+
 ### 1. Installing the latest version of the code from GitHub
 
 The latest version of code has to be downloaded from [Github](https://github.com/juanaldayparejo/archground-dist.git) under a [GNU General Public License v3](LICENSE). To do so, type in the command window:
@@ -83,3 +90,14 @@ Users wishing to work with spectroscopic databases that are not included in this
 The **archground** library relies on using data from other tools that cannot be unfortunately stored on the same GitHub repository, like the atmospheric and spectroscopic databases.
 
 Once we have downloaded them. We need to update the paths in the library according to our local settings. The file we need to change is *archground-dist/archground/paths.py*.
+
+
+## Citing archNEMESIS
+
+If archground or archNEMESIS have been significant in your research, we suggest citing the following articles:
+
+- archNEMESIS reference publication:
+   - Alday, J., Penn, J., Irwin, P., Mason, J., Yang, J. and Dobinson, J. (2025) archNEMESIS: An Open-Source Python Package for Analysis of Planetary Atmospheric Spectra, *Journal of Open Research Software*, 13(1), p. 10. doi: [10.5334/jors.554](https://doi.org/10.5334/jors.554).
+
+- NEMESIS reference publication:
+   - Irwin, P. G. J., Teanby, N. A., De Kok, R., Fletcher, L. N., Howett, C. J. A., Tsang, C. C. C., ... & Parrish, P. D. (2008). The NEMESIS planetary atmosphere radiative transfer and retrieval tool. *Journal of Quantitative Spectroscopy and Radiative Transfer*, 109(6), 1136-1150. doi: [10.1016/j.jqsrt.2007.11.006](https://doi.org/10.1016/j.jqsrt.2007.11.006).

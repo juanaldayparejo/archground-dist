@@ -503,7 +503,7 @@ def split_CO2_isotopes(Atmosphere,c13ratio=1.,o18ratio=1.,o17ratio=1.):
     Atmosphere.add_gas(2,1,vmr_co2*0.984204)
     Atmosphere.add_gas(2,2,vmr_co2*0.011057*c13ratio)       #VPDB
     Atmosphere.add_gas(2,3,vmr_co2*0.003947*o18ratio)       #VSMOW
-    Atmosphere.add_gas(2,4,vmr_co2*7.339890e-4*o18ratio)    #VSMOW
+    Atmosphere.add_gas(2,4,vmr_co2*7.339890e-4*o17ratio)    #VSMOW
 
     return Atmosphere
 
@@ -550,6 +550,50 @@ def split_CO_isotopes(Atmosphere,c13ratio=1.,o18ratio=1.,o17ratio=1.):
     Atmosphere.add_gas(5,2,vmr_co*0.0112372*c13ratio)   #VPDB
     Atmosphere.add_gas(5,3,vmr_co*2005.2e-6*o18ratio)   #VSMOW
     Atmosphere.add_gas(5,4,vmr_co*379.9e-6*o17ratio)    #VSMOW
+
+    return Atmosphere
+
+###############################################################################################
+
+def split_O2_isotopes(Atmosphere,o18ratio=1.,o17ratio=1.):
+
+    """
+    FUNCTION NAME : split_o2_isotopes()
+
+    DESCRIPTION : Function to split O2 into its 3 main isotopes
+
+    INPUTS : 
+
+        Atmosphere :: archNEMESIS atmosphere class
+
+    OPTIONAL INPUTS:
+    
+        o18ratio :: Value of 18O/16O (VSMOW)
+        o17ratio :: Value of 17O/16O (VSMOW)
+
+    OUTPUTS : 
+ 
+        Atmosphere :: archNEMESIS Atmosphere class
+
+    CALLING SEQUENCE:
+
+        Atmosphere = split_O2_isotopes(Atmosphere,o18ratio=1.,o17ratio=1.)
+
+    MODIFICATION HISTORY : Juan Alday (18/06/2026)
+
+    """
+
+    #Splitting CO2 into 4 isotopes
+    io2 = np.where( (Atmosphere.ID==7) & (Atmosphere.ISO==0) )[0][0]
+
+    vmr_o2 = Atmosphere.VMR[:,io2]
+
+    Atmosphere.remove_gas(7,0)
+
+    #Adding the isotopes of CO2 isotopes (following HITRAN fractionation)
+    Atmosphere.add_gas(7,1,vmr_o2*0.995262)
+    Atmosphere.add_gas(7,2,vmr_o2*0.003991*o18ratio)       #VSMOW
+    Atmosphere.add_gas(7,3,vmr_o2*7.422350e-4*o17ratio)    #VSMOW
 
     return Atmosphere
 

@@ -38,7 +38,7 @@ def process_fits(filename,print_file_structure=False):
     wavenumber : ndarray (nwave, norders)
         Wavenumber in cm-1.
     flux : ndarray (nwave, norders)
-        Measured spectra in flux units.
+        Measured spectra in flux units (per cm-1).
     continuum : ndarray (nwave, norders)
         Estimated continuum in flux units.
     uncertainty : ndarray (nwave, norders)
@@ -73,9 +73,23 @@ def process_fits(filename,print_file_structure=False):
         uncertainty = hdul["SIG"].data.astype(float)
         wavelength = hdul["WAVE"].data.astype(float)  #Angstroms
 
+        #Getting the ambient parameters
+        ambient = {
+            "temperature": primary_header.get("CAHA GEN AMBI TEMPERATURE") + 273.15,  # K
+            "dewpoint": primary_header.get("CAHA GEN AMBI DEWPOINT") + 273.15, # K
+            "relative_humidity": primary_header.get("CAHA GEN AMBI RHUM"),   # %
+            "wind_speed": primary_header.get("CAHA GEN AMBI WIND SPEED"),    # m/s
+            "wind_gust": primary_header.get("CAHA GEN AMBI WIND GUST"),      # m/s
+            "wind_direction": primary_header.get("CAHA GEN AMBI WIND DIR"),  # deg
+            "pressure": primary_header.get("CAHA GEN AMBI PRESSURE") * 100., # Pa
+        }
+
     #Converting wavelength from Angstroms to microns and calculating wavenumber in cm-1
-    wavelength /= 1.0e4  #microns
-    wavenumber = 1. / wavelength * 1.0e4  #cm-1
+    wavenumber = 1. / wavelength * 1.0e8  #cm-1
+
+    #Converting the flux from density per Angstrom to density per cm-1
+    #flux = flux * wavelength**2. * 1.0e-8
+    #uncertainty = uncertainty * wavelength**2. * 1.0e-8
 
     #Transposing the data arrays to have the shape (nwave,norders)
     flux = flux.T
@@ -89,6 +103,6 @@ def process_fits(filename,print_file_structure=False):
     time = datetime.split("T")[1]
     ephemerides = archground.get_ephemerides_epoch(date, time, planet, "CAHA")
 
-    return wavelength, wavenumber, flux, continuum, uncertainty, ephemerides
+    return wavelength / 1.0e4, wavenumber, flux, continuum, uncertainty, ephemerides, ambient
 
 #########################################################################################################

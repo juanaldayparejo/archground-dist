@@ -19,6 +19,7 @@
 from astropy.time import Time
 from astroquery.jplhorizons import Horizons
 from astropy.table import Table
+from datetime import timedelta
 import astropy.units as u
 import archground
 import numpy as np
@@ -90,6 +91,20 @@ observatory_dict = {
         "lat": 37.2234714,
         "elevation": 2.17561,
     },
+    'ALMA': {
+        "name": "Atacama Large Millimeter/submillimeter Array",
+        "horizons_id": "399",  # Unverified; use lon/lat/elevation instead
+        "lon": -67.755,
+        "lat": -23.029,
+        "elevation": 5.000,
+    },
+    'VLT': {
+        "name": "Very Large Telescope (Paranal Observatory)",
+        "horizons_id": "309",
+        "lon": -70.405075,
+        "lat": -24.6276222,
+        "elevation": 2.63543,
+    },
 }
 
 
@@ -108,7 +123,7 @@ def get_ephemerides_epoch(date,time,planet,observatory):
     date : str
         Date in the format 'YYYY-MM-DD'.
     time : str
-        Time in the format 'HH:MM:SS'.
+        Time in the format 'HH:MM:SS'
     planet : str
         Name of the planet (see archground dictionaries).
     observatory : str
@@ -137,7 +152,7 @@ def get_ephemerides_epoch(date,time,planet,observatory):
         epochs=epoch,
     )
 
-    eph = query.ephemerides(quantities="1,2,3,4,8,10,13,14,15,16,17,19,20,21,23,24,44")
+    eph = query.ephemerides(quantities="1,2,3,4,8,9,10,13,14,15,16,17,19,20,21,23,24,25,44")
 
     return eph
 
@@ -185,7 +200,7 @@ def get_ephemerides_period(date_start,date_end,planet,observatory,delta_minutes=
         },
     )
 
-    eph = query.ephemerides(quantities="1,2,3,4,8,10,13,14,15,16,17,19,20,21,23,24,25,44")
+    eph = query.ephemerides(quantities="1,2,3,4,8,9,10,13,14,15,16,17,19,20,21,23,24,25,44")
 
 
     #Getting the Sun elevation as it is also an important parameter for observing conditions
@@ -213,6 +228,9 @@ def calculate_visibility_windows(date_start,date_end,planet,observatory,delta_mi
                                  minimum_solar_elongation=30.,
                                  minimum_lunar_elongation=0.,
                                  minimum_elevation=0.,
+                                 minimum_doppler=0.,
+                                 minimum_disk_size=0.,
+                                 minimum_duration=0.,
                                  target_location=None,maximum_target_separation=30.):
     """
     Calculate the periods at which the a given planet is observable, according to some filtering criteria
@@ -239,6 +257,11 @@ def calculate_visibility_windows(date_start,date_end,planet,observatory,delta_mi
         Minimum lunar elongation in degrees
     minimum_elevation : float (default = 30.)
         Minimum elevation of the target planet above the horizon in degrees
+    minimum_doppler : float (default = 0.)
+        Minimum Doppler velocity between observed planet and observer (km/s)
+    minimum_disk_size : float (default = 0.)
+        Minimum angular size of the planet's disk (arcsec)
+
     target_location : (float,float)
         If not None, it indicates the (latitude_target,longitude_target) of the target point
     maximum_target_separation : float (default = 30.)
@@ -257,7 +280,7 @@ def calculate_visibility_windows(date_start,date_end,planet,observatory,delta_mi
     mask = ( (ephemerides["EL"] > minimum_elevation) & 
              (ephemerides["elong"] > minimum_solar_elongation) & 
              (ephemerides["sun_elevation"] < maximum_sun_elevation) & 
-             (ephemerides["lunar_elong"] > minimum_lunar_elongation)) 
+             (ephemerides["lunar_elong"] > minimum_lunar_elongation) ) 
 
     #Applying filter for target location if required
     if target_location is not None:
@@ -295,31 +318,102 @@ def calculate_visibility_windows(date_start,date_end,planet,observatory,delta_mi
         scale="utc",
     ).to_datetime()
 
+    # Convert masked values to NaN for numerical calculations.
+    def as_float(column):
+        return np.asarray(
+            np.ma.filled(np.ma.asarray(column, dtype=float), np.nan),
+            dtype=float,
+        )
+
+    #format times
+    def format_utc(dt):
+        rounded = (dt + timedelta(microseconds=500_000)).replace(microsecond=0)
+        return rounded.isoformat(sep=" ", timespec="seconds")
+
+    elevation = as_float(ephemerides["EL"])
+    doppler = as_float(ephemerides["delta_rate"])
+    angular_size = as_float(ephemerides["ang_width"])
+    apparent_ra = as_float(ephemerides["RA_app"])
+    apparent_dec = as_float(ephemerides["DEC_app"])
+    visual_magnitude = as_float(ephemerides["V"])
+
     rows = []
 
     for window_id, (start_idx, end_idx) in enumerate(
         zip(start_indices, end_indices), start=1
     ):
+        window_slice = slice(start_idx, end_idx + 1)
+
         start = dates[start_idx]
         end = dates[end_idx]
         duration = end - start
         mid = start + duration / 2
 
+        # Highest sampled elevation within this observing window.
+        peak_idx = start_idx + np.nanargmax(elevation[window_slice])
+        peak_elevation = elevation[peak_idx]
+
+        # Plane-parallel airmass approximation: sec(z) = 1 / sin(elevation).
+        peak_airmass = (
+            1.0 / np.sin(np.deg2rad(peak_elevation))
+            if peak_elevation > 0.0
+            else np.nan
+        )
+
         rows.append((
             window_id,
-            start.isoformat(sep=" "),
-            end.isoformat(sep=" "),
-            mid.isoformat(sep=" "),
-            duration.total_seconds() / 60,
+            format_utc(start),
+            format_utc(end),
+            duration.total_seconds() / 60.0,
+            format_utc(dates[peak_idx]),
+            peak_elevation,
+            peak_airmass,
+            apparent_ra[peak_idx],
+            apparent_dec[peak_idx],
+            visual_magnitude[peak_idx],
+            np.nanmean(doppler[window_slice]),
+            np.nanmean(angular_size[window_slice]),
         ))
 
     windows = Table(
         rows=rows,
-        names=["window_id", "start_utc", "end_utc", "mid_utc", "duration"],
-        dtype=[int, "U26", "U26", "U26", float],
+        names=[
+            "window_id",
+            "start_utc",
+            "end_utc",
+            "duration",
+            "peak_utc",
+            "peak_elevation",
+            "peak_airmass",
+            "peak_apparent_ra",
+            "peak_apparent_dec",
+            "peak_magnitude",
+            "doppler",
+            "angular_size",
+        ],
+        dtype=[
+            int,
+            "U26", "U26",
+            float,
+            "U26",
+            float, float, float, float, float, float, float,
+        ],
     )
 
     windows["duration"].unit = u.min
+    windows["peak_elevation"].unit = u.deg
+    windows["peak_airmass"].unit = u.dimensionless_unscaled
+    windows["peak_apparent_ra"].unit = u.deg
+    windows["peak_apparent_dec"].unit = u.deg
+    windows["peak_magnitude"].unit = u.mag
+    windows["doppler"].unit = u.km / u.s
+    windows["angular_size"].unit = u.arcsec
+
+    # Keep only windows strictly longer than the threshold (minutes).
+    windows = windows[ (windows["duration"] >= minimum_duration) & (np.abs(windows["doppler"]) >= minimum_doppler) & (windows["angular_size"] >= minimum_disk_size) ]
+
+    # Renumber the remaining windows.
+    windows["window_id"] = np.arange(1, len(windows) + 1)
 
     return windows
 

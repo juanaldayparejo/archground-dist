@@ -1,10 +1,80 @@
-# archground-dist
+<p align="center">
+  <a href="https://archnemesis.readthedocs.io/en/latest/">
+    <img src="https://raw.githubusercontent.com/juanaldayparejo/archnemesis-dist/main/docs/images/archnemesis_logo_black_background.png"
+         alt="archNEMESIS logo"
+         width="400">
+  </a>
+</p>
 
-Python package to perform the analysis of planetary spectra from ground-based facilities using the archnemesis algorithm
+<h1 align="center">archground</h1>
 
-This package is currently maintained by [Juan Alday](https://gapt.iaa.es/content/juan-alday).
+<p align="center">
+  <strong>Analysis of planetary spectra from ground-based observatories</strong>
+</p>
 
-If interested users are missing key points in the documentation, would appreciate seeing jupyter notebooks for certain purposes, or want to report issues, please do so by contacting us.
+**archground** extends [archNEMESIS](https://archnemesis.readthedocs.io/en/latest/)
+with tools tailored to ground-based observations of planetary atmospheres.
+It brings together the archNEMESIS radiative transfer and retrieval algorithms,
+instrument-specific functionality, and reference atmospheric models.
+
+This package is maintained by [Juan Alday](https://gapt.iaa.es/content/juan-alday).
+
+Questions, suggestions, and contributions are welcome. To report a problem,
+request documentation, or suggest a Jupyter notebook example, please
+[open an issue](https://github.com/juanaldayparejo/archground-dist/issues)
+or contact the maintainer.
+
+
+## Supported instruments
+
+**archground** supports the analysis of planetary spectra obtained with the following instruments:
+
+<table>
+  <tr>
+    <th align="center">NASA Infrared Telescope Facility</th>
+    <th align="center">Calar Alto Observatory</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://irsa.ipac.caltech.edu/images/icons/missions/irtf_logo.png"
+           alt="NASA Infrared Telescope Facility logo"
+           height="90">
+    </td>
+    <td align="center">
+      <img src="https://www.caha.es/APPS/CfP/public/images/CAHA-Logo.gif"
+           alt="Calar Alto Observatory logo"
+           height="90">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://irtfweb.ifa.hawaii.edu/~texes/Main%20Website/NewTEXES.html"><strong>TEXES</strong></a>
+    </td>
+    <td align="center">
+      <a href="https://carmenes.caha.es/"><strong>CARMENES</strong></a>
+    </td>
+  </tr>
+</table>
+
+
+
+
+## Supported planets
+
+**archground** currently includes atmospheric models for **Mars** and **Venus**.
+Reference atmospheric profiles are extracted from the corresponding climate databases:
+
+| Planet | Reference atmospheric profiles |
+| :--- | :--- |
+| 🔴 **Mars** | [Mars Climate Database (MCD)](https://www-mars.lmd.jussieu.fr/mars/access.html) |
+| 🟡 **Venus** | [Venus Climate Database (VCD)](http://www-venus.lmd.jussieu.fr/) |
+
+See [Installation](#installation) for instructions on downloading the climate
+databases, compiling their Fortran interfaces, and configuring local paths.
+
+
+
+
 
 ## Installation
 

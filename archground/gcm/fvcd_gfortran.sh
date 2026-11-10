@@ -30,10 +30,17 @@ sed s/"\!\!'"/"'"/g $wherevcd/julian.F90 | sed s/"\!'"/"'"/g | sed s/"\!"/"\n\!"
 f2py -h fvcd.pyf -m fvcd tmp.VCD_var.F90 tmp.VCD.F90 tmp.julian.F90 > fvcd.log 2>&1
 
 ### BUILD
+#f2py -c fvcd.pyf -m fvcd tmp.VCD_var.F90 tmp.VCD.F90 tmp.julian.F90 --fcompiler=gnu95 \
+#  -L$NETCDF/lib -lnetcdff -lnetcdf \
+#  -lm -I$NETCDF/include \
+#  --f90flags="-fPIC -ffree-form -ffree-line-length-none" \
+#  --verbose \
+#  > fvcd.log 2>&1
+
 f2py -c fvcd.pyf -m fvcd tmp.VCD_var.F90 tmp.VCD.F90 tmp.julian.F90 --fcompiler=gnu95 \
   -L$NETCDF/lib -lnetcdff -lnetcdf \
   -lm -I$NETCDF/include \
-  --f90flags="-fPIC -ffree-form -ffree-line-length-none" \
+  --f90flags="-fPIC -ffree-line-length-none" \
   --verbose \
   > fvcd.log 2>&1
 

@@ -105,6 +105,13 @@ observatory_dict = {
         "lat": -24.6276222,
         "elevation": 2.63543,
     },
+    'SOFIA': {
+        "name": "Stratospheric Observatory for Infrared Astronomy",
+        "horizons_id": None,  # Variables; get from lon/lat/elevation in files
+        "lon": None,
+        "lat": None,
+        "elevation": None,
+    },
 }
 
 
@@ -114,7 +121,9 @@ observatory_dict = {
 #############################################################################################################
 #############################################################################################################
 
-def get_ephemerides_epoch(date,time,planet,observatory):
+def get_ephemerides_epoch(date,time,planet,observatory,
+                          latitude=None,longitude=None,elevation=None
+                        ):
     """
     Get ephemerides for a given date, time, planet and observatory.
 
@@ -128,6 +137,17 @@ def get_ephemerides_epoch(date,time,planet,observatory):
         Name of the planet (see archground dictionaries).
     observatory : str
         Name of the observatory (see archground dictionaries).
+        If CUSTOM, then the user must provide lon, lat and elevation.
+
+    Optional Parameters
+    -------------------
+
+    longitude : float
+        Longitude of the observatory (degrees). Only used if observatory is CUSTOM.
+    latitude : float
+        Latitude of the observatory (degrees). Only used if observatory is CUSTOM.
+    elevation : float
+        Elevation of the observatory (km). Only used if observatory is CUSTOM.
 
     Returns
     -------
@@ -143,12 +163,25 @@ def get_ephemerides_epoch(date,time,planet,observatory):
     
     # Get the Horizons ID for the planet and observatory
     planet_id = planet_dict[planet.upper()]["horizons_id"]
-    observatory_id = observatory_dict[observatory.upper()]["horizons_id"]
+    observatory_key = observatory.upper()
+
+    if observatory_key == "CUSTOM":
+        if latitude is None or longitude is None or elevation is None:
+            raise ValueError(
+                'observatory="CUSTOM" requires latitude, longitude, and elevation.'
+            )
+        location = {
+            "lat": latitude,
+            "lon": longitude,
+            "elevation": elevation,
+        }
+    else:
+        location = observatory_dict[observatory_key]["horizons_id"]
 
     #Query the JPL Horizons system for ephemerides
     query = Horizons(
         id=planet_id,    
-        location=observatory_id, 
+        location=location, 
         epochs=epoch,
     )
 

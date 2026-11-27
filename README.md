@@ -33,6 +33,7 @@ or contact the maintainer.
   <tr>
     <th align="center">NASA Infrared Telescope Facility</th>
     <th align="center">Calar Alto Observatory</th>
+    <th align="center">SOFIA Stratospheric Observatory</th>
   </tr>
   <tr>
     <td align="center">
@@ -45,6 +46,11 @@ or contact the maintainer.
            alt="Calar Alto Observatory logo"
            height="90">
     </td>
+    <td align="center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/SOFIA_mission_patch.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=original"
+           alt="SOFIA logo"
+           height="90">
+    </td>
   </tr>
   <tr>
     <td align="center">
@@ -52,6 +58,9 @@ or contact the maintainer.
     </td>
     <td align="center">
       <a href="https://carmenes.caha.es/"><strong>CARMENES</strong></a>
+    </td>
+    <td align="center">
+      <a href="https://irsa.ipac.caltech.edu/data/SOFIA/docs/instruments/exes/"><strong>EXES</strong></a>
     </td>
   </tr>
 </table>

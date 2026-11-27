@@ -91,6 +91,76 @@ def create_atmosphere_vcd(h,lat,lon,LST):
 
     return Atmosphere
 
+
+###########################################################################################################################
+
+def create_atmosphere_vira(h,lat,lon,LST):
+    """
+    FUNCTION NAME : create_atmosphere_vira()
+
+    DESCRIPTION : Create the Atmosphere class from the VIRA and using the Haus et al. (2016) model
+
+    INPUTS : 
+
+        h(nh) :: Altitude (km)
+        lat :: Latitude (degrees)
+        lon :: Longitude (degrees)
+        LST :: Local time (h)
+
+    OPTIONAL INPUTS:
+    
+        None
+            
+    OUTPUTS : 
+ 
+        Atmosphere :: An instance of the `Atmosphere_0` class containing the reference atmosphere for Venus
+
+    CALLING SEQUENCE:
+
+        Atmosphere = create_atmosphere_vira(lat,lon,LST)
+
+    MODIFICATION HISTORY : Juan Alday (23/08/2026)
+    """
+
+    #Extracting p-T profile from VIRA
+    #press,temp = archground.gcm.extract_vcd.get_pt_profile(h,lat,lon,LST,vcddir=vcddir,euv_scenario=1,albedo_scenario=1)
+    press, temp, molwt = archground.gcm.extract_vcd.get_vira_profiles(h, latitude=lat)
+
+    #Extracting gaseous abundances
+    gas_id, vmr = archground.gcm.extract_vcd.get_vmr_profile(h,lat,lon,LST,vcddir=vcddir,euv_scenario=1,albedo_scenario=1)
+    
+    #Building Atmosphere
+    Atmosphere = ans.Atmosphere_0()
+    Atmosphere.NLOCATIONS = 1
+    Atmosphere.LATITUDE = lat
+    Atmosphere.LONGITUDE = lon
+    Atmosphere.IPLANET = 2
+    Atmosphere.NP = len(h)
+    Atmosphere.edit_H(h*1.0e3)
+    Atmosphere.edit_P(press)
+    Atmosphere.edit_T(temp)
+    Atmosphere.NVMR = len(gas_id)
+    Atmosphere.ID = np.array(gas_id,dtype='int')
+    Atmosphere.ISO = np.zeros(gas_id.shape,dtype='int')
+    Atmosphere.MOLWT = molwt / 1.0e3  #g/mol to kg/mol
+    Atmosphere.AMFORM = 0
+    Atmosphere.edit_VMR(vmr)
+    Atmosphere.assess()
+
+    #Adding the cloud
+    n1,n2,n2p,n3 = archground.gcm.extract_vcd.get_haus_cloud_model(h,latitude=Atmosphere.LATITUDE,offset=0.)
+
+    Atmosphere.NDUST = 4
+    dust = np.zeros((Atmosphere.NP,Atmosphere.NDUST))
+    dust[:,0] = n1 * 1.0e6  #cm-3 to m-3
+    dust[:,1] = n2 * 1.0e6  #cm-3 to m-3
+    dust[:,2] = n2p * 1.0e6  #cm-3 to m-3
+    dust[:,3] = n3 * 1.0e6  #cm-3 to m-3
+    Atmosphere.edit_DUST(dust)
+
+    return Atmosphere
+
+
 ###########################################################################################################################
 
 def create_surface_vcd(lat,lon,LST):

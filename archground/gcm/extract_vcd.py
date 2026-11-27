@@ -614,4 +614,99 @@ def get_haus_cloud_model(h,latitude=0.,offset=0.):
     return n1,n2,n2p,n3
 
 
+#####################################################################################################
 
+_PROFILE_FILES = {
+    30: "vira_lat00-30.txt",
+    45: "vira_lat45.txt",
+    60: "vira_lat60.txt",
+    75: "vira_lat75.txt",
+    85: "vira_lat85.txt",
+}
+
+def read_vira_profile(latitude_deg, profile_dir=archground.paths.archground_path+"/../data/vira/", *, return_altitude=True):
+    """Return altitude (km), pressure (Pa), temperature (K), and molar mass (g/mol).
+
+    Input latitude is signed, in degrees. Use the absolute latitude, the
+    00-30 table through 30 degrees, and the 85-degree table poleward of 85.
+    Between tables interpolate temperature and log-pressure at fixed altitude.
+    Mean molar mass is fixed at 43.45 g/mol at every level.
+
+    Set return_altitude=False to omit the native altitude grid.
+    """
+
+    from pathlib import Path
+
+    latitude = abs(float(latitude_deg))
+    if not np.isfinite(latitude) or latitude > 90:
+        raise ValueError("latitude_deg must be finite and between -90 and 90")
+
+    profile_dir = Path(profile_dir)
+    latitudes = np.array(sorted(_PROFILE_FILES))
+    latitude = np.clip(latitude, latitudes[0], latitudes[-1])
+    upper_index = int(np.searchsorted(latitudes, latitude))
+    upper_latitude = latitudes[upper_index]
+
+    def load_profile(model_latitude):
+        path = profile_dir / _PROFILE_FILES[model_latitude]
+        return np.loadtxt(path, delimiter=",", usecols=(0, 1, 2), unpack=True)
+
+    altitude_km, temperature_k, pressure_bar = load_profile(upper_latitude)
+    if latitude != upper_latitude:
+        lower_latitude = latitudes[upper_index - 1]
+        lower_altitude, lower_temp, lower_pressure = load_profile(lower_latitude)
+        if not np.array_equal(lower_altitude, altitude_km):
+            raise ValueError("Bracketing VIRA tables have different altitude grids")
+
+        weight = (latitude - lower_latitude) / (upper_latitude - lower_latitude)
+        temperature_k = (1 - weight) * lower_temp + weight * temperature_k
+        pressure_bar = np.exp(
+            (1 - weight) * np.log(lower_pressure) + weight * np.log(pressure_bar)
+        )
+
+    pressure_pa = pressure_bar * 1e5
+    molar_mass_g_mol = np.full_like(temperature_k, 43.45)
+    profiles = pressure_pa, temperature_k, molar_mass_g_mol
+    if return_altitude:
+        return altitude_km, *profiles
+    return profiles
+
+#####################################################################################################
+
+def get_vira_profiles(h, latitude=0.):
+    """Interpolate the Venus VIRA atmospheric profiles onto an altitude grid.
+
+    Inputs
+    ------
+    h(nh) :: Altitude (km), within the tabulated range of 0 to 100 km.
+
+    Optional inputs
+    ---------------
+    latitude :: Latitude (deg).
+
+    Outputs
+    -------
+    press(nh) :: Pressure (Pa).
+    temp(nh) :: Temperature (K).
+    molwt(nh) :: Mean molecular weight (g/mol).
+
+    The VIRA text files are read from the directory containing this module.
+    Pressure is interpolated in log space and temperature linearly.
+    """
+
+    from pathlib import Path
+
+    h = np.asarray(h, dtype=float)
+    if h.ndim != 1 or not np.all(np.isfinite(h)):
+        raise ValueError("h must be a one-dimensional array of finite altitudes")
+
+    z, pressure_pa, temperature_k, molar_mass = read_vira_profile(
+        latitude, return_altitude=True
+    )
+    if np.any((h < z[0]) | (h > z[-1])):
+        raise ValueError(f"h must be within the tabulated range {z[0]:g}-{z[-1]:g} km")
+
+    press = np.exp(np.interp(h, z, np.log(pressure_pa)))
+    temp = np.interp(h, z, temperature_k)
+    molwt = np.interp(h, z, molar_mass)
+    return press, temp, molwt
